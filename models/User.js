@@ -12,6 +12,7 @@ const User = db.define('user', {
         type : Sequelize.STRING,
         required : true,
         isEmail : true,
+        unique: true,
         min : 6, 
         max : 255
     },
