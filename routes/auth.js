@@ -1,8 +1,7 @@
-
 const router  = require('express').Router();
 const UserModel = require('../models/User');
-const {validationRegister} = require('../config/validation')
-
+const {validationRegister , validationlogin} = require('../config/validation')
+const bcrypt = require('bcrypt');
  
 router.post('/register' , async (req, res)=>{
 
@@ -23,13 +22,19 @@ router.post('/register' , async (req, res)=>{
     });
 
     //hash the password 
+    const saltRounds = 10;
+    const myPlaintextPassword = req.body.password;
+    const salt = await bcrypt.genSalt(10);
+    let passwordTosave = await bcrypt.hash(req.body.password , salt); 
+
 
     UserModel.create({
         name : req.body.name,
         email : req.body.email,
-        password : req.body.password
-     }).then(()=>{
+        password : passwordTosave
+     }).then((user)=>{
         res.json({
+            user : user,
             success : true
 
         })
@@ -41,8 +46,40 @@ router.post('/register' , async (req, res)=>{
     })
 });
 
-router.post('/login', (req, res)=>{
-    res.send('login');
+router.post('/login', async (req, res)=>{
+    
+    //step 01 : validation 
+    //distructring object
+    const { error } =   validationlogin(req.body);
+    if(error) return res.status(400).json({error : error.details[0].message});
+
+      //check if email exist 
+      const user = await UserModel.findOne({
+        where : {
+            email : req.body.email
+        }
+    });
+    if(!user) return res.status(400).json({
+        success : false,
+        message : 'email does not exist'
+    });
+
+    // cehck password
+    const validPass = await bcrypt.compare(req.body.password , user.password);
+
+    if(!validPass) return res.status(400).json({ success : false, message : "password is worng"});
+
+    // every thing is working super fine 
+    res.json({
+        success : true,
+        message : `hello mister : ${user.name}`
+    })
+
+
+
+
+
+
 })
 
 module.exports = router;
