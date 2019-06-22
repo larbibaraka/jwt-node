@@ -2,6 +2,8 @@ const router  = require('express').Router();
 const UserModel = require('../models/User');
 const {validationRegister , validationlogin} = require('../config/validation')
 const bcrypt = require('bcrypt');
+const jwt = require ('jsonwebtoken');
+require('dotenv').config();
  
 router.post('/register' , async (req, res)=>{
 
@@ -70,6 +72,11 @@ router.post('/login', async (req, res)=>{
     if(!validPass) return res.status(400).json({ success : false, message : "password is worng"});
 
     // every thing is working super fine 
+
+    //create and assign a token 
+    const token = jwt.sign({ id : user.id , name : user.name }, process.env.TOEKN_SECRET);
+
+    res.header('auth-token' , token).send(token);
     res.json({
         success : true,
         message : `hello mister : ${user.name}`
